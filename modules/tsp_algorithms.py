@@ -22,7 +22,7 @@ def greedy_tsp(distance_matrix):
         visited[next_city] = True
         current_city = next_city
 
-    total_distance += distance_matrix[current_city][tour[0]]
+    total_distance += distance_matrix[current_city][tour[0]]    # Sumamos la distancia de vuelta a la ciudad inicial
     tour.append(tour[0])
 
     return tour, total_distance

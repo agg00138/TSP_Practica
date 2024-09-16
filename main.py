@@ -19,6 +19,7 @@ def main():
         try:
             print(f"\nIntentando procesar archivo: {tsp_path}")
 
+            # Obtengo el diccionario
             tsp_data = utils.procesar_tsp(tsp_path)
             print("Nombre:", tsp_data['name'])
             print("Dimensión:", tsp_data['dimension'])
