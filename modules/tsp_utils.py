@@ -75,3 +75,31 @@ def procesar_archivo_txt(filename):
     except Exception as e:
         print(f"Error: {e}")
         sys.exit(1)
+
+
+def procesar_archivo_config(filename):
+    params = {
+        'Archivos': [],
+        'Semillas': [],
+        'Algoritmos': [],
+        'OtrosParametros1': None
+    }
+    try:
+        with open(filename, 'r') as file:
+            for line in file:
+                line = line.strip()
+                if line.startswith('Archivos='):
+                    params['Archivos'] = [f.strip() for f in line.split('=')[1].split(',')]
+                elif line.startswith('Semillas='):
+                    params['Semillas'] = line.split('=')[1].split(',')
+                elif line.startswith('Algoritmos='):
+                    params['Algoritmos'] = [a.strip() for a in line.split('=')[1].split(',')]
+                elif line.startswith('OtrosParametros1='):
+                    params['OtrosParametros1'] = line.split('=')[1].strip()
+    except FileNotFoundError:
+        print(f"Error: El archivo '{filename}' no se encuentra.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+    return params
