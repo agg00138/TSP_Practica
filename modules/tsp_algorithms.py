@@ -2,7 +2,7 @@
 
 import random
 
-def greedy_tsp(distance_matrix):
+def greedy_tsp(distance_matrix, log_file=None):
     n = len(distance_matrix)
     visited = [False] * n
     tour = []
@@ -12,7 +12,11 @@ def greedy_tsp(distance_matrix):
     tour.append(current_city)
     visited[current_city] = True
 
-    for _ in range(n - 1):
+    # Log de inicio
+    if log_file:
+        log_file.write(f"Inicio en ciudad: {current_city}\n")
+
+    for i in range(n - 1):
         next_city = None
         min_distance = float('inf')
         for city in range(n):
@@ -24,13 +28,22 @@ def greedy_tsp(distance_matrix):
         visited[next_city] = True
         current_city = next_city
 
+        # Registro de cada paso
+        if log_file:
+            log_file.write(
+                f"Ejecución {i + 1}: Visitando ciudad {next_city} - Distancia acumulada: {total_distance:.2f}\n")
+
     total_distance += distance_matrix[current_city][tour[0]]    # Sumamos la distancia de vuelta a la ciudad inicial
     tour.append(tour[0])
+
+    if log_file:
+        log_file.write(f"Distancia total: {total_distance:.2f}\n")
+        log_file.write(f"Tour final: {tour}\n")
 
     return tour, total_distance
 
 
-def greedy_random_tsp(distance_matrix, k):
+def greedy_random_tsp(distance_matrix, k, log_file=None):
     n = len(distance_matrix)
     visited = [False] * n
     tour = []
@@ -45,7 +58,11 @@ def greedy_random_tsp(distance_matrix, k):
     tour.append(current_city)
     visited[current_city] = True
 
-    for _ in range(n - 1):
+    # Log de inicio
+    if log_file:
+        log_file.write(f"Inicio en ciudad: {current_city}\n")
+
+    for i in range(n - 1):
         # Crear una lista de las ciudades no visitadas ordenadas por la suma de distancias original
         unvisited_cities = [city for city, _ in city_distances if not visited[city]]
 
@@ -62,8 +79,16 @@ def greedy_random_tsp(distance_matrix, k):
         # Actualizamos la ciudad actual
         current_city = next_city
 
-        # Sumamos la distancia para volver a la ciudad inicial
+        # Registro de cada paso
+        if log_file:
+            log_file.write(f"Ejecución {i + 1}: Visitando ciudad {next_city} - Distancia acumulada: {total_distance:.2f}\n")
+
+    # Sumamos la distancia para volver a la ciudad inicial
     total_distance += distance_matrix[current_city][tour[0]]
     tour.append(tour[0])
+
+    if log_file:
+        log_file.write(f"Distancia total: {total_distance:.2f}\n")
+        log_file.write(f"Tour final: {tour}\n")
 
     return tour, total_distance

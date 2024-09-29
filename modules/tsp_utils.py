@@ -82,7 +82,8 @@ def procesar_archivo_config(filename):
         'Archivos': [],
         'Semillas': [],
         'Algoritmos': [],
-        'OtrosParametros1': None
+        'OtrosParametros1': None,
+        'Echo': None
     }
     try:
         with open(filename, 'r') as file:
@@ -96,6 +97,8 @@ def procesar_archivo_config(filename):
                     params['Algoritmos'] = [a.strip() for a in line.split('=')[1].split(',')]
                 elif line.startswith('OtrosParametros1='):
                     params['OtrosParametros1'] = line.split('=')[1].strip()
+                elif line.startswith('Echo='):
+                    params['Echo'] = line.split('=')[1].strip()
     except FileNotFoundError:
         print(f"Error: El archivo '{filename}' no se encuentra.")
         sys.exit(1)
@@ -103,3 +106,9 @@ def procesar_archivo_config(filename):
         print(f"Error: {e}")
         sys.exit(1)
     return params
+
+
+#def log_execution(log_filename, content):
+#    """Función para registrar la ejecución en el archivo de log."""
+#    with open(log_filename, 'a') as log_file:
+#        log_file.write(content + '\n')

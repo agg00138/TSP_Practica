@@ -2,3 +2,4 @@ Archivos=a280.tsp, ch130.tsp, d18512.tsp, pr144.tsp, u1060.tsp
 Semillas=77378287, 73782877, 37828777, 78287773, 82877737
 Algoritmos=greedy, greedy_random
 OtrosParametros1=5
+Echo=yes
