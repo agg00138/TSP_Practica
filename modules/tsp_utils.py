@@ -1,114 +1,178 @@
 # modules/tsp_utils.py
 
-import math, sys
+import sys, random
 
 def procesar_tsp(filename):
     tsp_data = {
-        'name': None,   # Nombre del problema TSP
-        'dimension': None,  # Número de nodos (ciudades)
-        'node_coords': []   # Lista para almacenar las coordenadas de las ciudades
+        'name': None,          # Nombre del problema TSP
+        'dimension': None,     # Número de nodos (ciudades)
+        'node_coords': []      # Lista para almacenar las coordenadas de las ciudades
     }
-    with open(filename, 'r') as file:   # Abrimos el archivo en modo lectura
+
+    with open(filename, 'r') as file:
         for line in file:
-            line = line.strip() # Elimina espacios en blanco al principio y final de la línea
-            if not line:    # Si la línea está vacía la saltamos
+            line = line.strip()  # Elimina espacios en blanco al principio y final de la línea
+            if not line or line.startswith('NODE_COORD_SECTION') or line == 'EOF':
+                # Saltar líneas vacías, la sección de coordenadas y el indicador de fin del archivo
                 continue
+
+            # Procesar cabeceras y coordenadas del archivo
             if line.startswith('NAME:'):
                 tsp_data['name'] = line.split(':')[1].strip()
             elif line.startswith('DIMENSION:'):
                 tsp_data['dimension'] = int(line.split(':')[1].strip())
-            elif line.startswith('NODE_COORD_SECTION'):
-                continue
-            elif line == 'EOF': # Finalizamos
-                break
-            if len(line.split()) == 3:  # Si la línea contiene tres partes, extraemos las coordenadas del nodo
-                _, x, y = line.split()  # Ignora el índice y toma sólo las coordenadas
-                tsp_data['node_coords'].append((float(x), float(y)))
+            else:
+                # Procesar las coordenadas de cada nodo si la línea tiene exactamente 3 valores
+                tokens = line.split()
+                if len(tokens) == 3:
+                    _, x, y = tokens
+                    tsp_data['node_coords'].append((float(x), float(y)))
+
     return tsp_data
 
 
-def calcular_distancia(coord1, coord2):
-    x1, y1 = coord1
-    x2, y2 = coord2
-    return math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+def procesar_config(filename):
+    params = {
+        'Archivos': [],
+        'Semillas': [],
+        'Algoritmos': [],
+        'K_Ciudades': None,
+        'Echo': None,
+        'Iteraciones': None,
+        'Tamano_ED': None,
+        'Disminucion_ED': None
+    }
+
+    try:
+        with open(filename, 'r') as file:
+            for line in file:
+                line = line.strip()
+                if line.startswith('#') or not line:  # Ignorar comentarios y líneas vacías
+                    continue
+
+                if '=' in line:  # Solo procesar líneas que contengan '='
+                    key, value = line.split('=', 1)
+                    key = key.strip()  # Eliminar espacios en la clave
+                    value = value.strip()  # Eliminar espacios en el valor
+
+                    # Usar un diccionario para asignar los valores
+                    if key in params:
+                        if key in ['K_Ciudades', 'Iteraciones', 'Tamano_ED', 'Disminucion_ED']:
+                            params[key] = int(value)
+                        elif key == 'Echo':
+                            params[key] = value  # Asigna directamente como cadena
+                        else:
+                            params[key] = [item.strip() for item in value.split(',')]
+
+    except FileNotFoundError:
+        print(f"Error: El archivo '{filename}' no se encuentra.")
+        sys.exit(1)
+    except ValueError:
+        print(f"Error: Valor no válido en '{key}' para '{value}'.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+    return params
 
 
-def crear_matriz_distancias(node_coords):
+def calcular_matriz_distancias(node_coords):
+    """Calcula una matriz de distancias entre todas las coordenadas de nodos."""
     n = len(node_coords)
-
-    # Creamos una matriz cuadrada n x n inicializada con 0.0, donde se almacenarán las distancias
-    # [0.0] * n : Crea una fila de longitud n llena de ceros decimales (0.0)
-    # [[0.0] * n for _ in range(n)] : Lista por compresión
-    # _ (placeholder) : Variable que no se usa
-    # range(n) : crea una secuencia de números de 0 a n-1. Por lo tanto, el bucle se repite n veces
     distance_matrix = [[0.0] * n for _ in range(n)]
 
-    # Recorremos cada nodo para calcular la distancia con los demás nodos
     for i in range(n):
         for j in range(i + 1, n):
             distance = calcular_distancia(node_coords[i], node_coords[j])
             distance_matrix[i][j] = distance
             distance_matrix[j][i] = distance
+
     return distance_matrix
 
 
-def print_matriz_distancias(matrix):
-    # f"{elem:.2f}" : Convertirá el número flotante en una cadena con 2 decimales
-    # max(len(f"{elem:.2f}") : Buscará la cadena con la longitud más larga
-    # for row in matrix for elem in row) + 2 : Recorre cada fila y cada elem de esa fila y aplica un margen de +2
-    max_width = max(len(f"{elem:.2f}") for row in matrix for elem in row) + 2
-    for row in matrix:
-        print("".join(f"{elem:{max_width}.2f}" for elem in row))
+def calcular_distancia(coord1, coord2):
+    """Calcula la distancia euclidiana entre dos coordenadas."""
+    x1, y1 = coord1
+    x2, y2 = coord2
+    return ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
 
 
-def procesar_archivo_txt(filename):
-    # [line.strip() for line in file.readlines() if line.strip()]
-    # line.strip() : Elimina los espacios en blanco al principio y al final de cada línea
-    # if line.strip() : Solo incluye en la lista aquellas líneas que no estén vacías (después de aplicar strip())
-    try:
-        with open(filename, 'r') as file:
-            tsp_files = [line.strip() for line in file.readlines() if line.strip()]
-        return tsp_files
-    except FileNotFoundError:
-        print(f"Error: El archivo '{filename}' no se encuentra.")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
+def crear_matriz_distancias(node_coords):
+    """Función que envuelve la creación de la matriz de distancias."""
+    return calcular_matriz_distancias(node_coords)
 
 
-def procesar_archivo_config(filename):
-    params = {
-        'Archivos': [],
-        'Semillas': [],
-        'Algoritmos': [],
-        'OtrosParametros1': None,
-        'Echo': None
-    }
-    try:
-        with open(filename, 'r') as file:
-            for line in file:
-                line = line.strip()
-                if line.startswith('Archivos='):
-                    params['Archivos'] = [f.strip() for f in line.split('=')[1].split(',')]
-                elif line.startswith('Semillas='):
-                    params['Semillas'] = line.split('=')[1].split(',')
-                elif line.startswith('Algoritmos='):
-                    params['Algoritmos'] = [a.strip() for a in line.split('=')[1].split(',')]
-                elif line.startswith('OtrosParametros1='):
-                    params['OtrosParametros1'] = line.split('=')[1].strip()
-                elif line.startswith('Echo='):
-                    params['Echo'] = line.split('=')[1].strip()
-    except FileNotFoundError:
-        print(f"Error: El archivo '{filename}' no se encuentra.")
-        sys.exit(1)
-    except Exception as e:
-        print(f"Error: {e}")
-        sys.exit(1)
-    return params
+def calcular_distancia_total(tour, distance_matrix):
+    """
+    Calcula la distancia total de un recorrido (tour) basado en la matriz de distancias.
+
+    Args:
+        tour (list): Recorrido que representa la secuencia de ciudades a visitar.
+        distance_matrix (list[list[float]]): Matriz de distancias entre las ciudades.
+
+    Returns:
+        float: Distancia total del recorrido.
+    """
+    total_distance = 0.0
+    n = len(tour)
+
+    # Sumar la distancia entre cada par de ciudades consecutivas en el tour
+    for i in range(n - 1):
+        total_distance += distance_matrix[tour[i]][tour[i + 1]]
+
+    # Añadir la distancia para regresar a la ciudad inicial
+    total_distance += distance_matrix[tour[-1]][tour[0]]
+
+    return total_distance
 
 
-#def log_execution(log_filename, content):
-#    """Función para registrar la ejecución en el archivo de log."""
-#    with open(log_filename, 'a') as log_file:
-#        log_file.write(content + '\n')
+# def print_matriz_distancias(matrix):
+#     """Imprime la matriz de distancias con un formato de dos decimales."""
+#     max_width = max(len(f"{elem:.2f}") for row in matrix for elem in row) + 2
+#
+#     for row in matrix:
+#         print("".join(f"{elem:{max_width}.2f}" for elem in row))
+
+
+def generar_logs(alg_name, tsp_data, seed=None, execution_num=None):
+    """Genera el nombre del archivo de log basado en los parámetros proporcionados."""
+    log_filename = f"logs/{alg_name}_{tsp_data['name']}"
+
+    if seed is not None and execution_num is not None:
+        log_filename += f"_{seed}_ejecucion_{execution_num}.log"
+    else:
+        log_filename += "_ejecucion.log"
+
+    return log_filename
+
+
+def registrar_evento(log_file, mensaje):
+    """Registra un evento en el archivo de log."""
+    if log_file:
+        log_file.write(mensaje + '\n')
+
+
+def generar_vecinos_2opt(tour, tamano_entorno):
+    """
+    Genera vecinos usando el operador 2-opt.
+
+    Args:
+        tour (list): Recorrido que representa la secuencia de ciudades a visitar.
+        tamano_entorno (int): Número de vecinos a generar.
+
+    Returns:
+        list: Lista de recorridos (tours) vecinos generados por el operador 2-opt.
+    """
+    vecinos = []  # Lista para almacenar los vecinos generados
+    n = len(tour)  # Número de ciudades en el tour
+
+    # Generar vecinos usando el operador 2-opt tantas veces como el tamaño del entorno lo indique
+    for _ in range(tamano_entorno):
+        # Seleccionar dos puntos al azar para intercambiar
+        i, j = sorted(random.sample(range(1, n), 2))  # Selecciona dos índices aleatorios asegurando que i < j
+        # Generar un nuevo vecino aplicando la operación 2-opt
+        nuevo_vecino = tour[:i] + tour[i:j + 1][::-1] + tour[j + 1:]  # Invertir la sublista entre i y j
+        vecinos.append(nuevo_vecino)
+
+    return vecinos
