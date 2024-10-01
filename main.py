@@ -93,6 +93,8 @@ def main():
                     for tour, total_distance, problem_name, seed, i in resultados[tsp_data['name']]:
                         print(f"\nEjecutando búsqueda local para {problem_name} con semilla {seed}...")
 
+                        start_time = time.time()
+
                         if echo == 'no':
                             log_filename = utils.generar_logs(alg_name, tsp_data, seed=seed, execution_num=i)
 
@@ -107,7 +109,8 @@ def main():
                                 tour, total_distance, iteraciones, tamano_entorno, distance_matrix, disminucion_entorno,
                                 log_file=None
                             )
-                        result_message = f"Mejor distancia encontrada con Búsqueda Local para {problem_name} y semilla {seed}: {mejor_distancia:.2f}"
+                        execution_time = time.time() - start_time
+                        result_message = f"Mejor distancia encontrada con Búsqueda Local para {problem_name} y semilla {seed}: {mejor_distancia:.2f} - Tiempo de ejecución: {execution_time:.4f} segundos"
                         print(result_message)
 
                 else:
