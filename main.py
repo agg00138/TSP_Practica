@@ -79,20 +79,34 @@ def main():
                             tour, total_distance = algos.greedy_random_tsp(distance_matrix, k, log_file=None)
 
                         # Almacenar resultados de greedy_random en el diccionario
-                        resultados[tsp_data['name']].append((tour, total_distance, tsp_data['name'], seed))
+                        resultados[tsp_data['name']].append((tour, total_distance, tsp_data['name'], seed, i))
 
                         execution_time = time.time() - start_time
                         result_message = f"Ejecución {i} - Semilla: {seed} - Distancia Total: {total_distance:.2f} - Tiempo de ejecución: {execution_time:.4f} segundos"
                         print(result_message)
 
                 elif alg_name == 'busqueda_local':
+
+                    log_filename = None
+
                     # Ejecución de búsqueda local para cada resultado almacenado
-                    for tour, total_distance, problem_name, seed in resultados[tsp_data['name']]:
+                    for tour, total_distance, problem_name, seed, i in resultados[tsp_data['name']]:
                         print(f"\nEjecutando búsqueda local para {problem_name} con semilla {seed}...")
-                        mejor_tour, mejor_distancia = algos.busqueda_local_mejor(
-                            tour, total_distance, iteraciones, tamano_entorno, distance_matrix, disminucion_entorno,
-                            log_file=None
-                        )
+
+                        if echo == 'no':
+                            log_filename = utils.generar_logs(alg_name, tsp_data, seed=seed, execution_num=i)
+
+                        if log_filename:
+                            with open(log_filename, 'a') as log_file:
+                                mejor_tour, mejor_distancia = algos.busqueda_local_mejor(
+                                    tour, total_distance, iteraciones, tamano_entorno, distance_matrix, disminucion_entorno,
+                                    log_file=log_file
+                                )
+                        else:
+                            mejor_tour, mejor_distancia = algos.busqueda_local_mejor(
+                                tour, total_distance, iteraciones, tamano_entorno, distance_matrix, disminucion_entorno,
+                                log_file=None
+                            )
                         result_message = f"Mejor distancia encontrada con Búsqueda Local para {problem_name} y semilla {seed}: {mejor_distancia:.2f}"
                         print(result_message)
 
