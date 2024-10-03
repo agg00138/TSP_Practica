@@ -2,6 +2,7 @@
 
 import modules.tsp_utils as utils
 
+
 import random
 
 def greedy_tsp(distance_matrix, log_file=None):
@@ -131,63 +132,69 @@ def greedy_random_tsp(distance_matrix, k, log_file=None):
     return tour, total_distance
 
 
-def busqueda_local_mejor(tour_inicial, distancia_inicial, iteraciones, tamano_entorno, distance_matrix, disminucion, log_file=None):
+def busqueda_local_mejor(tour, distancia_inicial, iteraciones, porcentaje_tamano_entorno, distance_matrix, porcentaje_disminucion_entorno, disminucion, log_file=None):
     """
-    Implementa la búsqueda local del mejor para el problema del vendedor viajero (TSP).
+        Implementa la búsqueda local del mejor para el problema del vendedor viajero (TSP).
 
-    Args:
-        tour_inicial (list): Ruta inicial generada por el algoritmo greedy_random_tsp.
-        distancia_inicial (float): Distancia total de la ruta inicial proporcionada.
-        iteraciones (int): Número total de iteraciones a realizar.
-        tamano_entorno (int): Tamaño inicial del entorno dinámico.
-        distance_matrix (list[list[float]]): Matriz de distancias entre las ciudades.
-        disminucion(int): Porcentaje de disminución del tamaño del entorno.
-        log_file (file, optional): Archivo de log para registrar el progreso del algoritmo. Por defecto es None.
+        Args:
+            tour (list): Ruta inicial generada por el algoritmo greedy_random_tsp.
+            distancia_inicial (float): Distancia total de la ruta inicial proporcionada.
+            iteraciones (int): Número total de iteraciones a realizar.
+            porcentaje_tamano_entorno (int): Tamaño inicial del entorno dinámico (% del Total).
+            distance_matrix (list[list[float]]): Matriz de distancias entre las ciudades.
+            porcentaje_disminucion_entorno (int): Tamaño a partir del cual se reduce el entorno dinámico (% de iteraciones realizadas)
+            disminucion(int): Porcentaje de disminución del tamaño del entorno.
+            log_file (file, optional): Archivo de log para registrar el progreso del algoritmo. Por defecto es None.
 
-    Returns:
-        tuple: Una tupla que contiene:
-            - list: La mejor ruta (tour) encontrada.
-            - float: La distancia total de la mejor ruta.
-    """
-    mejor_tour = tour_inicial[:]
-    mejor_distancia = distancia_inicial  # Usar la distancia proporcionada
-    iteraciones_actuales = 0
+        Returns:
+            tuple: Una tupla que contiene:
+                - list: La mejor ruta (tour) encontrada.
+                - float: La distancia total de la mejor ruta.
+        """
+    mejor_tour = tour[:]
+    mejor_distancia = distancia_inicial
+    cont_iteraciones = 0
+    cuenta = 0
+
+    # Calculo el tamaño del entorno
+    tamano_entorno = int(iteraciones * (porcentaje_tamano_entorno / 100.0)) # (5000*8%) = 400
+
+    # Log inicial
+    if log_file:
+        utils.registrar_evento(log_file, f"Inicio Búsqueda Local: Tamaño inicial del entorno = {tamano_entorno}")
 
     # Iterar hasta alcanzar el número total de iteraciones
-    while iteraciones_actuales < iteraciones:
-        mejor_vecino = None
-        mejor_distancia_vecino = float('inf')
+    while cont_iteraciones < iteraciones:
 
-        # Generar vecinos en el entorno actual usando el operador 2-opt
-        vecinos = utils.generar_vecinos_2opt(mejor_tour, tamano_entorno)
-
-        for vecino in vecinos:
-            distancia_vecino = utils.calcular_distancia_total(vecino, distance_matrix)
-
-            # Evaluar si el vecino es mejor que el mejor vecino actual
-            if distancia_vecino < mejor_distancia_vecino:
-                mejor_vecino = vecino
-                mejor_distancia_vecino = distancia_vecino
+        # Generar vecinos y evaluar de inmediato
+        mejor_vecino, mejor_distancia_vecino, mejora = utils.generar_y_evaluar_vecinos_2opt(mejor_tour, tamano_entorno,
+                                                                                            mejor_distancia,
+                                                                                            distance_matrix)
 
         # Si se encuentra una mejora, actualiza la solución actual
-        if mejor_distancia_vecino < mejor_distancia:
+        if mejora:
             mejor_tour = mejor_vecino
             mejor_distancia = mejor_distancia_vecino
-            iteraciones_actuales += 1  # Solo se cuenta una iteración si se encuentra un mejor vecino
+            cont_iteraciones += 1  # Solo se cuenta una iteración si se encuentra un mejor vecino
 
             # Registro de mejora en el log
             if log_file:
-                utils.registrar_evento(log_file, f"Iteración {iteraciones_actuales}: Mejor distancia = {mejor_distancia:.2f}")
+                utils.registrar_evento(log_file,
+                                       f"Iteración {cont_iteraciones}: Mejor distancia = {mejor_distancia:.2f}")
         else:
             # Si no se encuentra una mejor solución, termina el algoritmo
             break
 
-        # Reducir el tamaño del entorno cada 10% de iteraciones
-        if iteraciones_actuales % (iteraciones // 10) == 0 and iteraciones_actuales != 0:
+        # Reducir el tamaño del entorno cada % (porcentaje_disminucion_entorno)
+        if cont_iteraciones == cuenta + (tamano_entorno // 10) and cont_iteraciones != 0:
             tamano_entorno = max(1, int(tamano_entorno * (1 - (disminucion / 100.0))))  # Reducir el tamaño en un 10% pero mantener mínimo de 1
+            cuenta = cont_iteraciones
+
+            if log_file:
+                utils.registrar_evento(log_file,f"Iteración {cont_iteraciones}: Tamaño del entorno reducido a {tamano_entorno}")
 
     # Registro final en el log
     if log_file:
-        utils.registrar_evento(log_file, f"Búsqueda Local finalizada: Mejor distancia encontrada = {mejor_distancia:.2f}")
+        utils.registrar_evento(log_file,f"Búsqueda Local finalizada: Mejor distancia encontrada = {mejor_distancia:.2f}")
 
     return mejor_tour, mejor_distancia

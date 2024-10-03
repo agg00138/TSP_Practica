@@ -19,8 +19,10 @@ def main():
     k = config_params['K_Ciudades']
     echo = config_params['Echo']
     iteraciones = config_params['Iteraciones']
-    tamano_entorno = config_params['Tamano_ED']
-    disminucion_entorno = config_params['Disminucion_ED']
+    porcentaje_tamano_entorno = config_params['Porcentaje_Tamano_ED']
+    porcentaje_disminucion_entorno = config_params['Porcentaje_Disminucion_ED']
+    disminucion = config_params['Disminucion']
+    porcentaje_empeoramiento = config_params['Porcentaje_Emp']
 
     # Crear directorio para logs si Echo es 'no'
     if echo == 'no':
@@ -40,7 +42,7 @@ def main():
             print("Nombre:", tsp_data['name'])
             print("Dimensión:", tsp_data['dimension'])
 
-            # Crear y mostrar la matriz de distancias
+            # Crear la matriz de distancias
             distance_matrix = utils.crear_matriz_distancias(tsp_data['node_coords'])
 
             # Inicializar la lista de resultados para este problema
@@ -91,7 +93,9 @@ def main():
 
                     # Ejecución de búsqueda local para cada resultado almacenado
                     for tour, total_distance, problem_name, seed, i in resultados[tsp_data['name']]:
+                        random.seed(seed) # Fijar la semilla para cada ejecución
                         print(f"\nEjecutando búsqueda local para {problem_name} con semilla {seed}...")
+                        print(f"Valor inicial para Búsqueda Local - Distancia: {total_distance:.2f}")
 
                         start_time = time.time()
 
@@ -101,17 +105,44 @@ def main():
                         if log_filename:
                             with open(log_filename, 'a') as log_file:
                                 mejor_tour, mejor_distancia = algos.busqueda_local_mejor(
-                                    tour, total_distance, iteraciones, tamano_entorno, distance_matrix, disminucion_entorno,
-                                    log_file=log_file
+                                    tour, total_distance, iteraciones, porcentaje_tamano_entorno, distance_matrix,
+                                    porcentaje_disminucion_entorno, disminucion, log_file=log_file
                                 )
                         else:
                             mejor_tour, mejor_distancia = algos.busqueda_local_mejor(
-                                tour, total_distance, iteraciones, tamano_entorno, distance_matrix, disminucion_entorno,
-                                log_file=None
+                                tour, total_distance, iteraciones, porcentaje_tamano_entorno, distance_matrix,
+                                porcentaje_disminucion_entorno, disminucion, log_file=None
                             )
                         execution_time = time.time() - start_time
                         result_message = f"Mejor distancia encontrada con Búsqueda Local para {problem_name} y semilla {seed}: {mejor_distancia:.2f} - Tiempo de ejecución: {execution_time:.4f} segundos"
                         print(result_message)
+
+                # elif alg_name == 'tabu':
+                #
+                #     log_filename = None
+                #
+                #     # Ejecutar el algoritmo Tabú para cada resultado almacenado
+                #     for tour, total_distance, problem_name, seed, i in resultados[tsp_data['name']]:
+                #         random.seed(seed)  # Fijar la semilla para cada ejecución
+                #         print(f"\nEjecutando algoritmo Tabú para {problem_name} con semilla {seed}...")
+                #         print(f"Valor inicial para Tabú - Distancia: {total_distance:.2f}")
+                #
+                #         if echo == 'no':
+                #             log_filename = utils.generar_logs(alg_name, tsp_data, seed=seed, execution_num=i)
+                #
+                #         if log_filename:
+                #             with open(log_filename, 'a') as log_file:
+                #                 mejor_tour, mejor_distancia = algos.algoritmo_tabu(
+                #                     tour, total_distance, iteraciones, porcentaje_tamano_entorno, distance_matrix, disminucion_entorno,
+                #                     porcentaje_empeoramiento, k, log_file=log_file
+                #                 )
+                #         else:
+                #             mejor_tour, mejor_distancia = algos.algoritmo_tabu(
+                #                 tour, total_distance, iteraciones, porcentaje_tamano_entorno, distance_matrix, disminucion_entorno,
+                #                 porcentaje_empeoramiento, k, log_file=None
+                #             )
+                #         result_message = f"Mejor distancia encontrada con Tabú para {problem_name} y semilla {seed}: {mejor_distancia:.2f}"
+                #         print(result_message)
 
                 else:
                     print(f"Algoritmo '{alg_name}' no reconocido.")
