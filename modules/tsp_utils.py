@@ -1,6 +1,12 @@
 # modules/tsp_utils.py
 
-import sys, random
+import sys, random, numpy as np
+from scipy.spatial.distance import cdist
+
+
+#   ########################################
+#   FUNCIONES PARA PROCESAR: TSP Y CONFIG
+#   ########################################
 
 
 def procesar_config(filename):
@@ -80,18 +86,15 @@ def procesar_tsp(filename):
     return tsp_data
 
 
-def calcular_matriz_distancias(node_coords):
-    """Calcula una matriz de distancias entre todas las coordenadas de nodos."""
-    n = len(node_coords)
-    distance_matrix = [[0.0] * n for _ in range(n)]
+#   ########################################
+#           FUNCIONES PARA CÁLCULOS
+#   ########################################
 
-    for i in range(n):
-        for j in range(i + 1, n):
-            distance = calcular_distancia(node_coords[i], node_coords[j])
-            distance_matrix[i][j] = distance
-            distance_matrix[j][i] = distance
 
-    return distance_matrix
+def crear_matriz_distancias(node_coords):
+    """Calcula una matriz de distancias usando scipy para mayor eficiencia."""
+    node_coords = np.array(node_coords)
+    return cdist(node_coords, node_coords)
 
 
 def calcular_distancia(coord1, coord2):
@@ -99,11 +102,6 @@ def calcular_distancia(coord1, coord2):
     x1, y1 = coord1
     x2, y2 = coord2
     return ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
-
-
-def crear_matriz_distancias(node_coords):
-    """Función que envuelve la creación de la matriz de distancias."""
-    return calcular_matriz_distancias(node_coords)
 
 
 def calcular_distancia_total(tour, distance_matrix):
@@ -130,7 +128,11 @@ def calcular_distancia_total(tour, distance_matrix):
     return total_distance
 
 
-def calcular_distancia_con_factores(tour_actual, tour_nuevo, distancia_inicial, indices, distance_matrix):
+def calcular_distancia_total_numpy(tour, distance_matrix):
+    return np.sum(distance_matrix[tour[:-1], tour[1:]]) + distance_matrix[tour[-1], tour[0]]
+
+
+def factorizacion(tour_actual, tour_nuevo, distancia_inicial, indices, distance_matrix):
     """
     Calcula la nueva distancia usando la distancia inicial y ajustando por los arcos que desaparecen y aparecen.
     Considera problemas simétricos en la matriz de distancias.
@@ -161,12 +163,54 @@ def calcular_distancia_con_factores(tour_actual, tour_nuevo, distancia_inicial, 
     return nueva_distancia
 
 
-# def print_matriz_distancias(matrix):
-#     """Imprime la matriz de distancias con un formato de dos decimales."""
-#     max_width = max(len(f"{elem:.2f}") for row in matrix for elem in row) + 2
-#
-#     for row in matrix:
-#         print("".join(f"{elem:{max_width}.2f}" for elem in row))
+def generar_y_evaluar_vecinos_2opt(tour, tamano_entorno, mejor_distancia, distance_matrix):
+    """
+    Genera vecinos usando el operador 2-opt y evalúa su calidad respecto a la mejor distancia.
+
+    Args:
+        tour (list): Recorrido que representa la secuencia de ciudades a visitar.
+        tamano_entorno (int): Número de vecinos a generar.
+        mejor_distancia (float): La distancia total del mejor recorrido encontrado hasta el momento.
+        distance_matrix (list[list[float]]): Matriz de distancias entre las ciudades.
+
+    Returns:
+        tuple: Una tupla que contiene:
+            - list: El mejor recorrido (tour) encontrado.
+            - float: La distancia total del mejor recorrido.
+            - bool: Indica si se encontró una mejora.
+    """
+    mejor_vecino = None
+    mejor_distancia_vecino = float('inf')
+    n = len(tour)  # Número de ciudades en el tour
+    mejora_encontrada = False  # Bandera para indicar si se encuentra una mejora
+
+    # Generar y evaluar cada vecino en el entorno
+    for _ in range(tamano_entorno):
+        # Seleccionar dos puntos al azar para intercambiar
+        i, j = sorted(random.sample(range(1, n), 2))  # Asegurar que i < j
+        # Generar un nuevo vecino aplicando la operación 2-opt
+        nuevo_vecino = tour[:i] + tour[i:j + 1][::-1] + tour[j + 1:]
+
+        # Calcular la distancia del vecino usando factorización
+        #distancia_vecino = factorizacion(tour, nuevo_vecino, mejor_distancia, (i, j), distance_matrix)
+        #distancia_vecino = calcular_distancia_total(nuevo_vecino, distance_matrix) # Para comprobar
+        distancia_vecino = calcular_distancia_total_numpy(nuevo_vecino, distance_matrix)
+
+        # Si encontramos un vecino mejor, actualizar
+        if distancia_vecino < mejor_distancia_vecino:
+            mejor_vecino = nuevo_vecino
+            mejor_distancia_vecino = distancia_vecino
+
+        if distancia_vecino < mejor_distancia:
+            mejora_encontrada = True    # Marcar que hemos encontrado una mejora
+
+    # Retornar el mejor vecino encontrado y si hubo o no mejora
+    return mejor_vecino, mejor_distancia_vecino, mejora_encontrada
+
+
+#   ########################################
+#   FUNCIONES PARA GENERAR REGISTROS DE LOGS
+#   ########################################
 
 
 def generar_logs(alg_name, tsp_data, seed=None, execution_num=None):
@@ -185,94 +229,3 @@ def registrar_evento(log_file, mensaje):
     """Registra un evento en el archivo de log."""
     if log_file:
         log_file.write(mensaje + '\n')
-
-
-# def generar_vecinos_2opt(tour, tamano_entorno):
-#     """
-#     Genera vecinos usando el operador 2-opt.
-#
-#     Args:
-#         tour (list): Recorrido que representa la secuencia de ciudades a visitar.
-#         tamano_entorno (int): Número de vecinos a generar.
-#
-#     Returns:
-#         list: Lista de recorridos (tours) vecinos generados por el operador 2-opt.
-#     """
-#     vecinos = []  # Lista para almacenar los vecinos generados
-#     n = len(tour)  # Número de ciudades en el tour
-#
-#     # Generar vecinos usando el operador 2-opt tantas veces como el tamaño del entorno lo indique
-#     for _ in range(tamano_entorno):
-#         # Seleccionar dos puntos al azar para intercambiar
-#         i, j = sorted(random.sample(range(1, n), 2))  # Selecciona dos índices aleatorios asegurando que i < j
-#         # Generar un nuevo vecino aplicando la operación 2-opt
-#         nuevo_vecino = tour[:i] + tour[i:j + 1][::-1] + tour[j + 1:]  # Invertir la sublista entre i y j
-#         vecinos.append((nuevo_vecino, (i, j)))  # Agregar el vecino y los índices
-#
-#     return vecinos
-
-
-def generar_y_evaluar_vecinos_2opt(tour, tamano_entorno, mejor_distancia, distance_matrix):
-    """
-    Genera vecinos usando el operador 2-opt y evalúa su calidad respecto a la mejor distancia.
-
-    Args:
-        tour (list): Recorrido que representa la secuencia de ciudades a visitar.
-        tamano_entorno (int): Número de vecinos a generar.
-        mejor_distancia (float): La distancia total del mejor recorrido encontrado hasta el momento.
-        distance_matrix (list[list[float]]): Matriz de distancias entre las ciudades.
-
-    Returns:
-        tuple: Una tupla que contiene:
-            - list: El mejor recorrido (tour) encontrado.
-            - float: La distancia total del mejor recorrido.
-            - bool: Indica si se encontró una mejora.
-    """
-    mejor_vecino = None
-    mejor_distancia_vecino = mejor_distancia
-    n = len(tour)  # Número de ciudades en el tour
-    mejora_encontrada = False  # Bandera para indicar si se encuentra una mejora
-
-    # Generar y evaluar cada vecino en el entorno
-    for _ in range(tamano_entorno):
-        # Seleccionar dos puntos al azar para intercambiar
-        i, j = sorted(random.sample(range(1, n), 2))  # Asegurar que i < j
-        # Generar un nuevo vecino aplicando la operación 2-opt
-        nuevo_vecino = tour[:i] + tour[i:j + 1][::-1] + tour[j + 1:]
-
-        # Calcular la distancia del vecino usando factorización
-        distancia_vecino = calcular_distancia_con_factores(tour, nuevo_vecino, mejor_distancia, (i, j), distance_matrix)
-
-        # Si encontramos un vecino mejor, actualizar
-        if distancia_vecino < mejor_distancia_vecino:
-            mejor_vecino = nuevo_vecino
-            mejor_distancia_vecino = distancia_vecino
-            mejora_encontrada = True  # Marcar que hemos encontrado una mejora
-
-    # Retornar el mejor vecino encontrado y si hubo o no mejora
-    return mejor_vecino, mejor_distancia_vecino, mejora_encontrada
-
-
-
-def generar_vecino_2opt_individual(tour):
-    """
-    Genera un vecino de la ruta actual utilizando el operador 2-opt, eligiendo dos puntos aleatorios y
-    aplicando la inversión de la subsecuencia entre ellos.
-
-    Args:
-        tour (list): Recorrido que representa la secuencia de ciudades a visitar.
-
-    Returns:
-        tuple:
-            - list: Nueva ruta generada por el operador 2-opt.
-            - tuple: Índices (i, j) utilizados para generar el vecino.
-    """
-    n = len(tour)  # Número de ciudades en el recorrido
-
-    # Seleccionar dos puntos al azar para intercambiar, asegurando que i < j
-    i, j = sorted(random.sample(range(1, n), 2))
-
-    # Generar un nuevo vecino aplicando la operación 2-opt
-    nuevo_vecino = tour[:i] + tour[i:j + 1][::-1] + tour[j + 1:]
-
-    return nuevo_vecino, (i, j)

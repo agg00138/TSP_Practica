@@ -2,8 +2,7 @@
 
 # Archivos que contienen los problemas TSP a resolver.
 # Cada archivo debe estar en la carpeta 'data'
-Archivos = a280.tsp
-#, ch130.tsp, d18512.tsp, pr144.tsp, u1060.tsp
+Archivos = a280.tsp, ch130.tsp, d18512.tsp, pr144.tsp, u1060.tsp
 
 # Semillas para la generación de números aleatorios.
 # Estas semillas aseguran que los resultados sean reproducibles.
@@ -11,7 +10,8 @@ Semillas = 77378287, 73782877, 37828777, 78287773, 82877737
 
 # Algoritmos que se utilizarán para resolver el problema TSP.
 # Puedes añadir más algoritmos si los implementas.
-Algoritmos = greedy, greedy_random, busqueda_local, tabu
+Algoritmos = greedy, greedy_random, busqueda_local
+#, tabu
 
 # K_Ciudades determina el número de ciudades a considerar
 # al elegir la siguiente ciudad en el algoritmo Greedy Aleatorio.
