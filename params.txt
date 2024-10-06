@@ -1,0 +1,35 @@
+# Parámetros para la práctica TSP
+
+# Nombres de los problemas
+problem_names=a280.tsp,ch130.tsp,d18512.tsp,pr144.tsp,u1060.tsp
+# berlin52.tsp
+
+# Nombres de los algoritmos
+algorithms=greedy_aleatorio,busqueda_local_mejor,algoritmo_tabu
+
+# DNI para la generación de semillas
+dni=77378287
+
+# Número de ejecuciones
+executions=5
+
+# Valor K para el algoritmo Greedy Aleatorio
+K=5
+
+# Número total de iteraciones
+iterations=5000
+
+# Tamaño inicial del entorno dinámico (8%)
+initial_environment_size=0.08
+
+# Ratio de disminución del tamaño del entorno (10%)
+size_decrease_rate=0.10
+
+# Disminución del tamaño del entorno (10%)
+size_decrease_environment=0.10
+
+# Ratio de empeoramiento
+worsening_movement_rate=0.05
+
+# Registro de eventos
+echo=no
