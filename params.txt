@@ -3,9 +3,10 @@
 # Nombres de los problemas
 problem_names=a280.tsp,ch130.tsp,d18512.tsp,pr144.tsp,u1060.tsp
 # berlin52.tsp
+# a280.tsp,ch130.tsp,d18512.tsp,pr144.tsp,u1060.tsp
 
 # Nombres de los algoritmos
-algorithms=greedy_aleatorio,busqueda_local_mejor,algoritmo_tabu
+algorithms=greedy_aleatorio,busqueda_local_mejor,algoritmo_tabu,algoritmo_tabu_mejorado
 
 # DNI para la generación de semillas
 dni=77378287
@@ -30,6 +31,12 @@ size_decrease_environment=0.10
 
 # Ratio de empeoramiento
 worsening_movement_rate=0.05
+
+# Tenencia tabú
+taboo_possesion=10
+
+# Oscilación estratégica
+strategic_oscillation=0.5
 
 # Registro de eventos
 echo=no

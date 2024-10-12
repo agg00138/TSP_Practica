@@ -36,6 +36,8 @@ def procesar_configuracion(nombre_archivo):
         'size_decrease_rate': None,
         'size_decrease_environment': None,
         'worsening_movement_rate': None,
+        'taboo_possesion': None,
+        'strategic_oscillation': None,
         'echo': None
     }
 
@@ -50,6 +52,8 @@ def procesar_configuracion(nombre_archivo):
         'size_decrease_rate': float,
         'size_decrease_environment': float,
         'worsening_movement_rate': float,
+        'taboo_possesion': int,
+        'strategic_oscillation': float,
         'echo': str
     }
 

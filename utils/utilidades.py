@@ -40,40 +40,141 @@ def crear_matriz_distancias_scipy(coordenadas):
 
 
 def generar_vecinos(tour, distancia, matriz_distancias, tamanio_entorno):
-    # Controlamos si encontramos un mejor vecino
-    mejora = False
+    """
+        Genera vecinos de la solución actual (tour) al intercambiar dos ciudades.
+
+        Parameters:
+            tour (list): La solución actual representada como un recorrido de ciudades.
+            distancia (float): La distancia total de la solución actual.
+            matriz_distancias (numpy.ndarray): Matriz de distancias entre las ciudades.
+            tamanio_entorno (int): Número de vecinos a generar.
+
+        Returns:
+            mejor_vecino (list): El vecino que tiene la mejor (menor) distancia encontrada.
+            distancia_mejor_vecino (float): La distancia del mejor vecino encontrado.
+            mejora (bool): Indica si se encontró una mejora en comparación con la solución actual.
+            m_i (int): Índice de la primera ciudad intercambiada.
+            m_j (int): Índice de la segunda ciudad intercambiada.
+    """
+
+    # Variables del vecino
     mejor_vecino = None
     distancia_mejor_vecino = float('inf')
+
+    # Control de la mejora
+    mejora = False
+
+    # Control de los índices
+    i, j = 0, 0
+    m_i, m_j = 0, 0
+
+    # Arcos
+    arco_original_1 = arco_original_2 = arco_original_3 = arco_original_4 = 0
+    nuevo_arco_1 = nuevo_arco_2 = nuevo_arco_3 = nuevo_arco_4 = 0
 
     # Número de ciudades en el tour
     n = len(tour)
 
     for _ in range(tamanio_entorno):
-        # Seleccionar dos puntos al azar para intercambiar
-        # Evitamos el primer y el último índice para prevenir errores en la operación 2-opt
-        i, j = sorted(random.sample(range(1, n - 1), 2))  # Asegurar que 1 <= i < j <= n-2
+        # Selecciona dos índices al azar (intercambio)
+        i, j = sorted(random.sample(range(1, n - 1), 2))
 
-        # Aplicar 2-opt
-        nuevo_vecino = tour[:i] + tour[i:j + 1][::-1] + tour[j + 1:]
+        # Generamos el tour del vecino
+        nuevo_vecino = tour[:]
+        nuevo_vecino[i], nuevo_vecino[j] = tour[j], tour[i]
 
-        # Calcular los arcos que desaparecen en el tour original
-        arco_original_1 = matriz_distancias[tour[i - 1]][tour[i]]
-        arco_original_2 = matriz_distancias[tour[j]][tour[(j + 1) % n]]
+        # Calculamos las distancias de los arcos
+        if i + 1 == j:
+            arco_original_1 = matriz_distancias[tour[i - 1]][tour[i]]
+            arco_original_2 = matriz_distancias[tour[j]][tour[j + 1 % n]]
+            nuevo_arco_1 = matriz_distancias[tour[i - 1]][tour[j]]
+            nuevo_arco_2 = matriz_distancias[tour[i]][tour[j + 1 % n]]
+        else:
+            arco_original_1 = matriz_distancias[tour[i - 1]][tour[i]]
+            arco_original_2 = matriz_distancias[tour[i]][tour[i + 1 % n]]
+            arco_original_3 = matriz_distancias[tour[j - 1]][tour[j]]
+            arco_original_4 = matriz_distancias[tour[j]][tour[j + 1 % n]]
+            nuevo_arco_1 = matriz_distancias[tour[i - 1]][tour[j]]
+            nuevo_arco_2 = matriz_distancias[tour[j]][tour[i + 1 % n]]
+            nuevo_arco_3 = matriz_distancias[tour[j - 1]][tour[i]]
+            nuevo_arco_4 = matriz_distancias[tour[i]][tour[j + 1 % n]]
 
-        # Calcular los arcos nuevos en el vecino
-        arco_nuevo_1 = matriz_distancias[nuevo_vecino[i - 1]][nuevo_vecino[i]]
-        arco_nuevo_2 = matriz_distancias[nuevo_vecino[j]][nuevo_vecino[(j + 1) % n]]
+        # Arcos que DESAPARECEN
+        arcos_desaparecen = (arco_original_1 + arco_original_2 + arco_original_3 + arco_original_4)
 
-        # Actualizamos la distancia del vecino
-        nueva_distancia = distancia - (arco_original_1 + arco_original_2) + (arco_nuevo_1 + arco_nuevo_2)
+        # Arcos NUEVOS
+        arcos_nuevos = (nuevo_arco_1 + nuevo_arco_2 + nuevo_arco_3 + nuevo_arco_4)
 
-        # Verificamos si encontramos un vecino mejor
+        # Calculo la distancia del vecino generado
+        nueva_distancia = distancia - (arcos_desaparecen) + (arcos_nuevos)
+
+        # Verificamos el nuevo vecino encontrado
         if nueva_distancia < distancia_mejor_vecino:
             mejor_vecino = nuevo_vecino
             distancia_mejor_vecino = nueva_distancia
+            m_i, m_j = i, j
 
-        # Verificar que la nueva distancia sea válida
+        # Comprobamos si existe una mejora
         if distancia_mejor_vecino < distancia:
             mejora = True
 
-    return mejor_vecino, distancia_mejor_vecino, mejora
+    return mejor_vecino, distancia_mejor_vecino, mejora, m_i, m_j
+
+
+def operador_intensificacion(solucion_actual, matriz_distancias):
+    """
+    Operador de intensificación: Genera una solución basada en la solución actual
+    para explorar intensivamente su vecindario.
+
+    Args:
+        solucion_actual (list): La solución actual (recorrido).
+        matriz_distancias (numpy.ndarray): Matriz de distancias entre las ciudades.
+
+    Returns:
+        list, float: Un nuevo tour generado y su distancia.
+    """
+    # Aquí puedes usar algún método como un operador 2-opt intensivo en torno a la mejor solución
+    nueva_solucion = solucion_actual.copy()
+    np.random.shuffle(nueva_solucion)  # Simple intensificación aleatoria (se puede mejorar)
+
+    # Calcular la distancia total de la nueva solución
+    nueva_distancia = calcular_distancia(nueva_solucion, matriz_distancias)
+
+    return nueva_solucion, nueva_distancia
+
+
+def operador_diversificacion(matriz_distancias):
+    """
+    Operador de diversificación: Genera una solución completamente nueva
+    para explorar otras áreas del espacio de búsqueda.
+
+    Args:
+        matriz_distancias (numpy.ndarray): Matriz de distancias entre las ciudades.
+
+    Returns:
+        list, float: Un nuevo tour generado y su distancia.
+    """
+    # Generar una solución completamente nueva aleatoria
+    nueva_solucion = np.random.permutation(len(matriz_distancias)).tolist()
+
+    # Calcular la distancia total de la nueva solución
+    nueva_distancia = calcular_distancia(nueva_solucion, matriz_distancias)
+
+    return nueva_solucion, nueva_distancia
+
+
+def calcular_distancia(tour, matriz_distancias):
+    """
+    Calcula la distancia total de un recorrido dado.
+
+    Args:
+        tour (list): Recorrido de las ciudades.
+        matriz_distancias (numpy.ndarray): Matriz de distancias entre las ciudades.
+
+    Returns:
+        float: Distancia total del recorrido.
+    """
+    distancia_total = 0
+    for i in range(len(tour)):
+        distancia_total += matriz_distancias[tour[i]][tour[(i + 1) % len(tour)]]
+    return distancia_total

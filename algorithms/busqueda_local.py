@@ -11,7 +11,7 @@ def busqueda_local_mejor(tour_inicial, distancia_inicial, matriz_distancias, par
         Args:
             tour_inicial (list[int]): El tour inicial propuesto.
             distancia_inicial (float): La distancia total del tour inicial.
-            matriz_distancias (list[list[float]]): Matriz de distancias entre las ciudades.
+            matriz_distancias (np.ndarray): Matriz de distancias entre las ciudades.
             params (dict): Parámetros de control para la búsqueda local.
             log_file (file object, optional): Archivo donde se registran los eventos de la búsqueda.
 
@@ -31,19 +31,21 @@ def busqueda_local_mejor(tour_inicial, distancia_inicial, matriz_distancias, par
     # Inicialización
     mejor_tour = tour_inicial
     mejor_distancia = distancia_inicial
+
+    # Contadores
     contador = 0
     iteracion = 0
 
     # Registrar el estado inicial
-    registrar_evento(log_file, f"Estado inicial: distancia_inicial={distancia_inicial:.2f}\n")
+    registrar_evento(log_file, f"Estado inicial: tour={tour_inicial} distancia_inicial={distancia_inicial:.2f}\n")
 
     while contador < iteraciones:
 
         # Generar vecinos con el operador 2-opt
-        vecino, distancia_vecino, mejora = generar_vecinos(mejor_tour, mejor_distancia, matriz_distancias, tamanio)
+        vecino, distancia_vecino, mejora, i, j = generar_vecinos(mejor_tour, mejor_distancia, matriz_distancias, tamanio)
 
         # Registrar vecinos generados
-        registrar_evento(log_file,f"Iteración {contador + 1}: Generado vecino con distancia={distancia_vecino:.2f}, mejora={mejora}\n")
+        registrar_evento(log_file,f"Iteración {contador + 1}: Generado vecino con intercambio {vecino[i], vecino[j]} distancia={distancia_vecino:.2f}, mejora={mejora}\n")
 
         # Si hay mejora
         if mejora and vecino is not None:
@@ -53,6 +55,8 @@ def busqueda_local_mejor(tour_inicial, distancia_inicial, matriz_distancias, par
             # Registrar mejora
             registrar_evento(log_file, f"Mejora encontrada: distancia_actual={mejor_distancia:.2f}\n")
         else:
+            # No hay mejoras, terminamos
+            registrar_evento(log_file, "No se encontraron mejoras, finalizando.\n")
             break
 
         # Reducimos el tamaño del entorno
