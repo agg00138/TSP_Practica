@@ -133,7 +133,7 @@ def operador_intensificacion(solucion_actual, matriz_distancias):
     Returns:
         list, float: Un nuevo tour generado y su distancia.
     """
-    # Aquí puedes usar algún método como un operador 2-opt intensivo en torno a la mejor solución
+    # Aquí puedes usar algún metodo como un operador 2-opt intensivo en torno a la mejor solución
     nueva_solucion = solucion_actual.copy()
     np.random.shuffle(nueva_solucion)  # Simple intensificación aleatoria (se puede mejorar)
 
